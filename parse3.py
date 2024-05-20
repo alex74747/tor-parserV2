@@ -164,7 +164,7 @@ def create_csv_file(year, month, day):
     csv = open(csv_filename, 'w+')
     print("  [+] Creating CSV file %s" % (csv_filename))
     csv.write(
-        'Name,Fingerprint,Flags,IP,OrPort,ObservedBW,GuardClients,DirClients,Uptime,Longitude,Latitude)\n')
+        'Name,Fingerprint,Flags,IP,OrPort,ObservedBW,Uptime,GuardClients,DirClients,Longitude,Latitude)\n')
     return csv
 
 
