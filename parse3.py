@@ -164,7 +164,7 @@ def create_csv_file(year, month, day):
     csv = open(csv_filename, 'w+')
     print("  [+] Creating CSV file %s" % (csv_filename))
     csv.write(
-        'Name,Fingerprint,Flags,IP,OrPort,ObservedBW,Uptime,GuardClients,DirClients,Longitude,Latitude)\n')
+        'Name,Fingerprint,Flags,IP,OrPort,ObservedBW,GuardClients,DirClients,Uptime,Longitude,Latitude)\n')
     return csv
 
 
@@ -188,6 +188,7 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
         if lon is False and lat is False:
             lon = 0.0
             lat = 0.0
+            continue
 
         fp = desc.fingerprint
         digest = desc.digest.lower()
@@ -250,8 +251,8 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
         csv_fp.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (desc.nickname,
                                                              desc.fingerprint, flag, desc.address, desc.or_port,
                                                              float(
-                                                                 sd.observed_bandwidth/1000.0/1000.0), sd.uptime, entry_ips,
-                                                             dir_ips, lon, lat))
+                                                                 sd.observed_bandwidth/1000.0/1000.0), entry_ips,
+                                                             dir_ips, sd.uptime, lon, lat))
     csv_fp.close()
 
 
