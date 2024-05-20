@@ -186,7 +186,8 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
         # Check for longitude and latitude. Without this, the entry is useless.
         lon, lat = geo_ip_lookup(desc.address)
         if lon is False and lat is False:
-            continue
+            lon = 0.0
+            lat = 0.0
 
         fp = desc.fingerprint
         digest = desc.digest.lower()
@@ -249,8 +250,8 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
         csv_fp.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (desc.nickname,
                                                              desc.fingerprint, flag, desc.address, desc.or_port,
                                                              float(
-                                                                 sd.observed_bandwidth/1000.0/1000.0), entry_ips,
-                                                             dir_ips, sd.uptime, lon, lat))
+                                                                 sd.observed_bandwidth/1000.0/1000.0), sd.uptime, entry_ips,
+                                                             dir_ips, lon, lat))
     csv_fp.close()
 
 
