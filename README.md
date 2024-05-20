@@ -1,3 +1,8 @@
+# THIS PROJECT IS NOT SERIOUS (FOR NOW)
+## NOTE
+
+Beware, this uses A LOT of inodes.
+
 ## Tor Consensus and Server Descriptor Parser
 
 This is the version of the script that formats the data in a way that it is compatible with [Torflow](https://github.com/unchartedsoftware/torflow)
