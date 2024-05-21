@@ -2,7 +2,6 @@ import os
 import sys
 import stem
 import urllib.request
-import time
 import geoip2.database
 import tarfile
 import shutil
@@ -17,12 +16,12 @@ def geo_ip_lookup(ip_address):
         try:
             response = reader.city(ip_address)
         except geoip2.errors.AddressNotFoundError:
-            return (False, False)
-        except Exception as e:
-            print("  [-] Error while looking up %s" % (ip_address))
-            return (False, False)
+            return False, False
+        except Exception:
+            print("  [-] Error while looking up %s" % ip_address)
+            return False, False
         else:
-            return (response.location.longitude, response.location.latitude)
+            return response.location.longitude, response.location.latitude
 
 
 def dl_server_descriptors(year, month):
@@ -35,7 +34,7 @@ def dl_server_descriptors(year, month):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
     if os.path.isfile(save_path):
-        print("  [+] Server descriptors %s found" % (save_path))
+        print("  [+] Server descriptors %s found" % save_path)
         return save_path
     # Check if the directory exists.
     if os.path.isdir("%s" % (save_path[:-7])):
@@ -49,7 +48,7 @@ def dl_server_descriptors(year, month):
             print("  [-] Unable to fetch server descriptors %s at %s" %
                   (filename, url))
             return None
-    except Exception as e:
+    except Exception:
         print("  [-] Unable to fetch %s/%s" % (url, filename))
         return None
     fp = open(save_path, "wb+")
@@ -68,7 +67,7 @@ def dl_consensus(year, month):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
     if os.path.isfile(save_path):
-        print("  [+] Consensus %s found" % (save_path))
+        print("  [+] Consensus %s found" % save_path)
         return save_path
     # Check if the directory exists.
     if os.path.isdir("%s" % (save_path[:-7])):
@@ -81,7 +80,7 @@ def dl_consensus(year, month):
         if request.code != 200:
             print("  [-] Unable to fetch consensus %s at %s" % (filename, url))
             return None
-    except Exception as e:
+    except Exception:
         print("  [-] Unable to fetch %s/%s" % (url, filename))
         return None
 
@@ -101,7 +100,7 @@ def dl_extra_infos(year, month):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
     if os.path.isfile(save_path):
-        print("  [+] Extra infos %s found" % (save_path))
+        print("  [+] Extra infos %s found" % save_path)
         return save_path
     # Check if the directory exists.
     if os.path.isdir("%s" % (save_path[:-7])):
@@ -115,7 +114,7 @@ def dl_extra_infos(year, month):
             print("  [-] Unable to fetch extra infos %s at %s" %
                   (filename, url))
             return None
-    except Exception as e:
+    except Exception:
         print("  [-] Unable to fetch %s/%s" % (url, filename))
         return None
     fp = open(save_path, "wb+")
@@ -148,7 +147,7 @@ def get_previous_data(year, month, day):
             prev_month -= 1
         str_month = str(prev_month)
         if prev_month < 10:
-            str_month = "0%d" % (prev_month)
+            str_month = "0%d" % prev_month
         prev_sd_path = dl_server_descriptors(prev_year, str_month)
         prev_ei_path = dl_extra_infos(prev_year, str_month)
     return prev_sd_path, prev_ei_path
@@ -159,20 +158,20 @@ def create_csv_file(year, month, day):
     csv_filename = 'data/relays-%s-%s-%s-00-00-00.csv' % \
         (year, month, day)
     if os.path.exists(csv_filename):
-        print("  [+] CSV %s exists, skipping!" % (csv_filename))
+        print("  [+] CSV %s exists, skipping!" % csv_filename)
         return None
     csv = open(csv_filename, 'w+')
-    print("  [+] Creating CSV file %s" % (csv_filename))
+    print("  [+] Creating CSV file %s" % csv_filename)
     csv.write(
         'Name,Fingerprint,Flags,IP,OrPort,ObservedBW,GuardClients,DirClients,Uptime,Longitude,Latitude)\n')
     return csv
 
 
 def client_ips_to_string(ei_dict, sep):
-    l = []
+    List = []
     for key, value in ei_dict.items():
-        l.append('%s:%s' % (key, value))
-    return sep.join(l)
+        List.append('%s:%s' % (key, value))
+    return sep.join(List)
 
 
 def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year, month, day):
@@ -185,26 +184,23 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
     for desc in consensus.routers.values():
         # Check for longitude and latitude. Without this, the entry is useless.
         lon, lat = geo_ip_lookup(desc.address)
-        if lon is False and lat is False:
-            lon = 0.0
-            lat = 0.0
+        if lon is False and lat is False or lon is None or lat is None:
             continue
 
         fp = desc.fingerprint
         digest = desc.digest.lower()
-        sd_filename = "%s/%s/%s/%s" % (sd_path[:-7],
-                                       digest[0], digest[1], digest)
+        sd_filename = "%s/%s/%s/%s" % (sd_path[:-7], digest[0], digest[1], digest)
         try:
             sd = next(parse_file(sd_filename))
-        except Exception as e:
+        except Exception:
             if prev_sd_path is None:
                 continue
             sd_filename = "%s/%s/%s/%s" % (
                 prev_sd_path[:-7], digest[0], digest[1], digest)
             try:
                 sd = next(parse_file(sd_filename))
-            except Exception as e:
-                print("  [-] Server descriptor %s not found" % (digest))
+            except Exception:
+                print("  [-] Server descriptor %s not found" % digest)
                 continue
 
         # Open extra info.
@@ -216,27 +212,27 @@ def write_csv_data(consensus, sd_path, prev_sd_path, ei_path, prev_ei_path, year
                                            digest[0], digest[1], digest)
             try:
                 ei = next(parse_file(ei_filename))
-            except Exception as e:
+            except Exception:
                 if prev_ei_path is None:
                     continue
                 ei_filename = "%s/%s/%s/%s" % (
                     prev_ei_path[:-7], digest[0], digest[1], digest)
                 try:
                     ei = next(parse_file(ei_filename))
-                except Exception as e:
-                    print("  [-] Extra info %s not found" % (ei_filename))
+                except Exception:
+                    print("  [-] Extra info %s not found" % ei_filename)
                     continue
             try:
                 # Any Guard client ips?
                 if ei.entry_ips is not None and len(ei.entry_ips) != 0:
                     entry_ips = client_ips_to_string(ei.entry_ips, "|")
-            except Exception as e:
+            except Exception:
                 pass
             try:
                 # Any Directory client ips?
                 if ei.dir_v3_requests is not None and len(ei.dir_v3_requests) != 0:
                     dir_ips = client_ips_to_string(ei.dir_v3_requests, "|")
-            except Exception as e:
+            except Exception:
                 pass
 
         # Get relay flags.
@@ -264,7 +260,7 @@ def make_monthly_csv(year, month, day):
     match_found = False
     str_month = str(month)
     if month < 10:
-        str_month = "0%d" % (month)
+        str_month = "0%d" % month
     consensus_path = dl_consensus(year, str_month)
     if consensus_path is None:
         return None
@@ -284,20 +280,19 @@ def make_monthly_csv(year, month, day):
     for dir_day in os.listdir('./%s' % (consensus_path[:-7])):
         str_day = str(day)
         if day < 10:
-            str_day = "0%d" % (day)
+            str_day = "0%d" % day
         if day != 0 and str_day != dir_day:
             continue
         match_found = True
         consensus_pathname = \
             "./consensuses/consensuses-%s-%s/%s/%s-%s-%s-00-00-00-consensus" % \
             (year, str_month, dir_day, year, str_month, dir_day)
-        print("  [+] Reading consensus %s" % (consensus_pathname))
+        print("  [+] Reading consensus %s" % consensus_pathname)
         try:
             consensus = next(parse_file(consensus_pathname,
                              document_handler=DocumentHandler.DOCUMENT))
-        except Exception as e:
-            print("  [-] Consensus %s not found. Skipping!" %
-                  (consensus_pathname))
+        except Exception:
+            print("  [-] Consensus %s not found. Skipping!" % consensus_pathname)
             continue
 
         # Nullify the previous path if we aren't the first of the month.
@@ -309,15 +304,15 @@ def make_monthly_csv(year, month, day):
 
     if match_found is False:
         print("  [-] Date not found in consensus")
-    # Cleanup consensus and server descriptors for this month.
-    # shutil.rmtree(consensus_path)
-    # shutil.rmtree(sd_path)
-    # if prev_sd_path is not None:
-    #    shutil.rmtree(prev_sd_path)
+        shutil.rmtree(consensus_path)
+        shutil.rmtree(sd_path)
+        if prev_sd_path is not None:
+            shutil.rmtree(prev_sd_path)
+        # Cleanup consensus and server descriptors for this month.
 
 
 def make_yearly_csv(year):
-    """ DOC DOC """
+    """ DOC TBC """
     for month in range(1, 12):
         make_monthly_csv(year, month, 0)
 
@@ -362,12 +357,10 @@ if __name__ == '__main__':
             month = int(sys.argv[2])
         if len(sys.argv) > 3:
             day = int(sys.argv[3])
+        # Create the data repository
+        if not os.path.isdir("./data"):
+            os.mkdir("./data")
+        run(year, month, day)
     except ValueError as e:
         print("Invalid argument.")
         usage()
-
-    # Create the data repository
-    if not os.path.isdir("./data"):
-        os.mkdir("./data")
-
-    run(year, month, day)
