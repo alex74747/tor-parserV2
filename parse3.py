@@ -1,10 +1,10 @@
 import os
+import shutil
 import sys
 import stem
 import urllib.request
 import geoip2.database
 import tarfile
-import shutil
 
 from stem.descriptor import DocumentHandler, parse_file
 
@@ -33,10 +33,11 @@ def dl_server_descriptors(year, month):
     if not os.path.isdir(save_dir_path):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
+    # Check if the archive exists.
     if os.path.isfile(save_path):
         print("  [+] Server descriptors %s found" % save_path)
         return save_path
-    # Check if the directory exists.
+    # Check if the directory (uncompressed) exists.
     if os.path.isdir("%s" % (save_path[:-7])):
         print("  [+] Server descriptors %s found" % (save_path[:-7]))
         return save_path
@@ -66,10 +67,11 @@ def dl_consensus(year, month):
     if not os.path.isdir(save_dir_path):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
+    # Check if the archive exists.
     if os.path.isfile(save_path):
         print("  [+] Consensus %s found" % save_path)
         return save_path
-    # Check if the directory exists.
+    # Check if the directory (uncompressed) exists.
     if os.path.isdir("%s" % (save_path[:-7])):
         print("  [+] Consensus %s found" % (save_path[:-7]))
         return save_path
@@ -99,10 +101,11 @@ def dl_extra_infos(year, month):
     if not os.path.isdir(save_dir_path):
         os.mkdir(save_dir_path)
     save_path = "%s/%s" % (save_dir_path, filename)
+    # Check if the archive exists.
     if os.path.isfile(save_path):
         print("  [+] Extra infos %s found" % save_path)
         return save_path
-    # Check if the directory exists.
+    # Check if the directory (uncompressed) exists.
     if os.path.isdir("%s" % (save_path[:-7])):
         print("  [+] Extra infos %s found" % (save_path[:-7]))
         return save_path
@@ -127,6 +130,7 @@ def uncompress(path, dst):
     # Remove .tar.xz
     dirname = path[:-7]
     if os.path.isdir(dirname):
+        print("  [+] %s Already uncompressed into %s/%s" % (path, dst, dirname))
         return
     print("  [+] Uncompressing %s into %s/%s" % (path, dst, dirname))
     with tarfile.open(path) as f:
@@ -308,12 +312,11 @@ def make_monthly_csv(year, month, day):
         shutil.rmtree(sd_path)
         if prev_sd_path is not None:
             shutil.rmtree(prev_sd_path)
-        # Cleanup consensus and server descriptors for this month.
 
 
 def make_yearly_csv(year):
     """ DOC TBC """
-    for month in range(1, 12):
+    for month in range(1, 13):
         make_monthly_csv(year, month, 0)
 
 
